@@ -1,2 +1,2 @@
 # Utils
-utit library 
+util library in C 
