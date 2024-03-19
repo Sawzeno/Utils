@@ -1,46 +1,49 @@
 #include  <stdio.h>
+#include  <inttypes.h>
 #include  <stdlib.h>
 #include  <string.h>
 
-#include  "list.h"
+#include  "localString.h"
 
-Node* initNode(){
-  Node* node  = malloc(sizeof(Node));
+localString* initNode(){
+  localString* node  = malloc(sizeof(localString));
   ISNULL(node)
   node->string  = NULL;
   node->next    = NULL;
   return node;
 }
 
-Node* createNode(const char* string){
+localString* createNode(const char* string){
   ISNULL(string);
-  Node* node  = initNode();
+  localString* node  = initNode();
 
-  node->string  = malloc(sizeof(char) * strlen(string));
+  uint64_t size = strlen(string);
+  node->string  = malloc(sizeof(char) * size + 1);
   ISNULL(node->string);
-
+  node->string[size]  = '\0';
   strcpy(node->string , string);
-  
+
   return node;
 }
 
-Node* editNode(Node* node , const char* string){
-    ISNULL(node);
-    ISNULL(string);
-  
-    free(node->string);
-    node->string  = malloc(sizeof(char) * strlen(string));
+localString* editNode(localString* node , const char* string){
+  ISNULL(node);
+  ISNULL(string);
 
-    strcpy(node->string, string);
+  free(node->string);
+  uint64_t size = strlen(string);
+  node->string  = malloc(sizeof(char) * size + 1);
 
-    return node;
+  strcpy(node->string, string);
+  node->string[size]  = '\0';
+  return node;
 }
 
-Node* addNode(List* list , const char* string){
+localString* addNode(LSList* list , const char* string){
   ISNULL(list)
   ISNULL(string)
 
-  Node* node  = createNode(string);
+  localString* node  = createNode(string);
 
   if(list->head == NULL){
     list->head  = node;
@@ -54,14 +57,14 @@ Node* addNode(List* list , const char* string){
   return list->tail;
 }
 
-Node* insertNextNode(List* list , Node* node , const char* string){
+localString* insertNextNode(LSList* list , localString* node , const char* string){
 
   ISNULL(list)
   ISNULL(node)
   ISNULL(string)
 
-  Node* next  = createNode(string);
-  Node* temp  = node->next;
+  localString* next  = createNode(string);
+  localString* temp  = node->next;
   node->next  = next;
   next->next  = temp;
 
@@ -69,13 +72,13 @@ Node* insertNextNode(List* list , Node* node , const char* string){
   return next;
 }
 
-Node* deleteNextNode(List* list , Node* prev){
+localString* deleteNextNode(LSList* list , localString* prev){
   ISNULL(list)
   ISNULL(prev)
   ISNULL(prev->next)
 
-  Node* node  = prev->next;
-  Node* temp  = node->next;
+  localString* node  = prev->next;
+  localString* temp  = node->next;
 
   free(node->string);
   free(node);
@@ -86,14 +89,14 @@ Node* deleteNextNode(List* list , Node* prev){
   return prev;
 }
 
-Node* getNode(List* list , int index){
+localString* getNode(LSList* list , uint64_t index){
 
   ISNULL(list)
   ISINVAL(index , > , list->size)
   ISINVAL(index , == , 0)
 
-  int i = 1;
-  Node* temp = list->head;
+  uint64_t i = 1;
+  localString* temp = list->head;
 
   while(i < index){
     temp  = temp->next;
@@ -103,10 +106,9 @@ Node* getNode(List* list , int index){
   return temp;
 }
 
+LSList* initLSList(){
 
-List* initList(){
-
-  List* list  = malloc(sizeof(List));
+  LSList* list  = malloc(sizeof(LSList));
   ISNULL(list)
 
   list->head  = NULL;
@@ -115,14 +117,14 @@ List* initList(){
   return list;
 }
 
-List* createList(int size){
+LSList* createLSList(uint64_t size){
 
   ISINVAL(size, ==, 0)
-  List* list  = initList();
+  LSList* list  = initLSList();
   list->size  = size;
   list->head  = initNode();
-  Node* temp  = list->head;
-  int i = 1;
+  localString* temp  = list->head;
+  uint64_t i = 1;
 
   while(i < list->size){
     temp->next  = initNode();
@@ -134,13 +136,13 @@ List* createList(int size){
   return list;
 }
 
-List* splitList(List* list , int index){
+LSList* splitLSList(LSList* list , uint64_t index){
   ISNULL(list);
   ISINVAL(index, >= , list->size)
 
-  List* newlist = initList();
-  Node* node  = getNode(list, index);
-  
+  LSList* newlist = initLSList();
+  localString* node  = getNode(list, index);
+
   newlist->size = list->size - index;
   newlist->head = node->next;
   newlist->tail = list->tail;
@@ -152,15 +154,15 @@ List* splitList(List* list , int index){
   return newlist;
 }
 
-int shrinkList(List* list , int size){
+uint64_t shrinkLSList(LSList* list , uint64_t size){
   ISINVAL(size, >=, list->size)
 
-  Node* node  = getNode(list , size);
+  localString* node  = getNode(list , size);
   list->tail  = node;
 
   node  = node->next;
-  Node* temp;
-  int i = 0;
+  localString* temp;
+  uint64_t i = 0;
   while(node  !=  NULL){
     temp  = node->next;
     free(node->string);
@@ -175,15 +177,15 @@ int shrinkList(List* list , int size){
   return i;
 }
 
-int  printList(List* list){
- 
+uint64_t  printLSList(LSList* list){
+
   ISNULL(list)
-  
-  Node* head  = list->head;
-  printf("SIZE  : %d\n" , list->size);
-  int i = 1;
+
+  localString* head  = list->head;
+  printf("SIZE  : %"PRIu64"\n" , list->size);
+  uint64_t i = 1;
   while(head  != NULL){
-    printf("%d  : %s\n" ,i,head->string);
+    printf("%"PRIu64"  : %s\n" ,i,head->string);
     head  = head->next;
     ++i;
   }
@@ -191,13 +193,13 @@ int  printList(List* list){
   return i;
 }
 
-int freeList(List* list){
+uint64_t freeLSList(LSList* list){
 
   ISNULL(list)
-  Node* temp  = list->head;
-  Node* next;
-  
-  int numNodes = 0;
+  localString* temp  = list->head;
+  localString* next;
+
+  uint64_t numNodes = 0;
   while(temp != NULL){
     numNodes++;
     temp  = temp->next;
@@ -208,10 +210,10 @@ int freeList(List* list){
 
   temp  = list->head;
 
-  int numDeleted = 0;
+  uint64_t numDeleted = 0;
   while(temp  != NULL ){
     next  = temp->next;
-    
+
     free(temp->string);
     free(temp);
     temp  = next;
@@ -222,7 +224,7 @@ int freeList(List* list){
   list->head  = NULL;
   list->tail  = NULL;
 
-  printf("NUMDELETED  : %d\n" , numDeleted);
+  printf("NUMDELETED  : %"PRIu64"\n" , numDeleted);
   return numDeleted;
 }
 
