@@ -183,14 +183,14 @@ uint64_t  printLSList(LSList* list){
 
   localString* head  = list->head;
   printf("SIZE  : %"PRIu64"\n" , list->size);
-  uint64_t i = 1;
+  uint64_t count = 0;
   while(head  != NULL){
-    printf("%"PRIu64"  : %s\n" ,i,head->string);
+    ++count;
+    printf("%"PRIu64"  : %s\n" ,count,head->string);
     head  = head->next;
-    ++i;
   }
 
-  return i;
+  return count;
 }
 
 uint64_t freeLSList(LSList* list){
