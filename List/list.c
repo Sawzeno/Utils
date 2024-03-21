@@ -1,37 +1,54 @@
-#include  <stdlib.h>
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <stdbool.h>
-#include  <unistd.h>
+
 #include  "list.h"
 
+ListNode* createListNode(ListInfo info , void* item){
 
-Node* createNode(ListInfo info , void* item){
-  
   ISNULL(&info)
-  Node* node =  malloc(sizeof(Node));
+    ListNode* node =  malloc(sizeof(ListNode));
   MEMERR(node);
-  
+
   node->item  = info.createInfo(item);
   node->next  = NULL;
 
   return node;
 }
 
-Node* getNode(List* list, U64 index){
+ListNode* getListNode(List* list, U64 index) {
   ISNULL(list)
-  if(index >= list->size || index < 0 ){
-    LOG_WARNING("invalid index")
+
+  if (index > list->size || index < 1) {
+    LOG_WARNING("Invalid index")
     return NULL;
   }
 
   U64 i = 1;
-  Node* temp = list->head;
-  while(i < index && temp != NULL){
+  ListNode* temp = list->head;
+  while (i < index && temp != NULL) {
     temp = temp->next;
     ++i;
   }
 
   return temp;
+}
+
+ListNode* addListNode(List* list , void* item){
+  ISNULL(list)
+
+  ListNode* node  = createListNode(list->info , item);
+
+  if(list->head == NULL){
+    list->head  = node;
+    list->tail  = list->head;
+  }else{
+    list->tail->next  = node;
+    list->tail  = node;
+  }
+
+  ++list->size;
+  return list->tail;
 }
 
 List* initList(ListInfo info) {
@@ -47,17 +64,17 @@ List* initList(ListInfo info) {
 
 List* createList(ListInfo info, U64 size) {
   ISNULL(&info)
-    List* list = initList(info);
+  List* list = initList(info);
   if (size == 0) {
     return list;
   }
 
   list->size = size;
-  list->head = createNode(info, NULL);
+  list->head = createListNode(info, NULL);
 
-  Node* temp = list->head;
+  ListNode* temp = list->head;
   for (U64 i = 1; i < list->size; ++i) {
-    temp->next = createNode(info , NULL);
+    temp->next = createListNode(info , NULL);
     temp = temp->next;
   }
 
@@ -65,10 +82,10 @@ List* createList(ListInfo info, U64 size) {
   return list;
 }
 
-bool debugList(List* list) {
+bool validList(List* list ) {
   ISNULL(list)
 
-  Node* temp = list->head;
+  ListNode* temp = list->head;
   U64 count = 0;
 
   while (temp != NULL) {
@@ -90,35 +107,17 @@ bool debugList(List* list) {
   }
 }
 
-Node* addNode(List* list , void* item){
-  ISNULL(list)
-
-  Node* node  = createNode(list->info , item);
-
-  if(list->head == NULL){
-    list->head  = node;
-    list->tail  = list->head;
-  }else{
-    list->tail->next  = node;
-    list->tail  = node;
-  }
-
-  ++list->size;
-  return list->tail;
-}
-
-
 U64 freeItems(List* list) {
   ISNULL(list)
 
-  if (debugList(list) == false) {
+  if (validList(list) == false) {
     LOG_WARNING("INVALID LIST")
     return 0;
   }
 
   U64 count = 0;
-  Node* temp = list->head;
-  Node* next;
+  ListNode* temp = list->head;
+  ListNode* next;
   while (temp != NULL) {
     next = temp->next;
     next  = NULL;
@@ -134,17 +133,27 @@ U64 freeItems(List* list) {
 }
 
 U64 shrinkList  (List*  list , U64 index){
-  
+
+  if (validList(list) == false) {
+    LOG_WARNING("INVALID LIST")
+    return 0;
+  }
+
   if(index  >= list->size){
     LOG_WARNING("index greater than size")
     return 0;
   }
-  Node* node  = getNode(list , index);
+
+  ListNode* node = getListNode(list, index);
+  if (!node) {
+    LOG_WARNING("ListNode not found at index")
+    return 0;
+  }
   list->tail  = node;
 
   node  = node->next;
-  Node* temp;
-  uint64_t i = 0;
+  ListNode* temp;
+  U64 i = 0;
   while(node  !=  NULL){
     temp  = node->next;
     free(node);
@@ -156,4 +165,27 @@ U64 shrinkList  (List*  list , U64 index){
   list->size -=i;
 
   return i;
+}
+
+List* splitList(List* list , U64 index){
+  ISNULL(list);
+  if(index  >= list->size){
+    LOG_WARNING("index greater than size")
+    return 0;
+  }
+  List* newlist = initList(list->info);
+  ISNULL(newlist)
+
+  ListNode* newListHead  = getListNode(list, index);
+  ISNULL(newListHead)
+
+  newlist->size = list->size - index;
+  newlist->head = newListHead->next;
+  newlist->tail = list->tail;
+
+  newListHead->next  = NULL;
+  list->tail  = newListHead;
+  list->size  = index;
+
+  return newlist;
 }
