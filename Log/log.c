@@ -1,11 +1,12 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<unistd.h>
 
 #include"log.h"
 
-UtilBuff* inttostr(uint64_t* integer){
+UtilBuff* inttostr(uint64_t integer){
 
-  uint64_t _int = *integer;
+  uint64_t _int = integer;
 
   uint8_t* string  = malloc(sizeof(uint8_t) * 24);
   if(string == NULL){
@@ -36,6 +37,9 @@ UtilBuff* inttostr(uint64_t* integer){
   for(int i = 0 ; i < buffer->size ; ++i){
     buffer->string[i] = string[buffer->size - i - 1];
   }
+  
+  write(STDOUT_FILENO, buffer->string, buffer->size);
+  write(STDOUT_FILENO, "\n", 1);
 
   free(string);
   return buffer;

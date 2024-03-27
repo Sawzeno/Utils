@@ -1,0 +1,16 @@
+void resizeScreen(Screen* parent ,I64 disp){
+
+  Screen* vert  = parent->child;
+  U64 limit     = parent->resy * child->resy;
+  if(parent->resy + disp > limit || parent->resy + disp <= 0){
+    perror("invalid disp");
+  }
+
+  parent->resy  += disp;
+  child->resy   -=disp;
+
+  child->string +=  (disp * parent->resx);
+
+  fillScreen(parent, parent->type);
+  fillScreen(child, child->type);
+}
