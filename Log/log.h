@@ -23,12 +23,17 @@
 #define REACH fprintf(stderr, "\x1b[2;93mFILE:  %s  LINE: %d  FUNC: %s\x1b[0m\n",__FILE__,__LINE__,__func__);
 
 #define U64 uint64_t
+#define U8	uint8_t
+
 #define I64 int64_t
+#define I8	int8_t
 
 typedef struct{
-  uint8_t* string;
-  uint8_t   size;
+  U8* string;
+  U8  size;
 }UtilBuff;
 
-UtilBuff* inttostr(uint64_t integer);
-
+void writeint (U64 integer);
+void sp       (const char *format , ...); 
+bool findstr  (const char* str    , const char* check);
+bool contains (const char* str    , const char* check);

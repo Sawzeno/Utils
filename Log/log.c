@@ -1,46 +1,77 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdarg.h>
+#include<stdbool.h>
 #include<unistd.h>
 
 #include"log.h"
 
-UtilBuff* inttostr(uint64_t integer){
+void sp(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
 
-  uint64_t _int = integer;
+    char *buffer;
+    vasprintf(&buffer, format, args);
+    va_end(args);
 
-  uint8_t* string  = malloc(sizeof(uint8_t) * 24);
-  if(string == NULL){
-    perror("maler : temp string");
-  }
+    MEMERR(buffer)
+    printf("%s", buffer);
 
-  uint8_t count = 0;
-  uint8_t rem   = 0;
+    free(buffer);
+}
 
-  do{
-    rem = (uint8_t)(_int % 10);
-    string[count] = rem + '0';
-    _int /= 10;
-    ++count;
-  }while(_int != 0);
+void writeint(U64 integer) {
+    U64 _int = integer;
 
-  UtilBuff* buffer  = malloc(sizeof(UtilBuff));
-  if(buffer ==  NULL){
-    perror("maler : UtilBuffer");
-  }
+    U8 string[24]; 
+    U8 count = 0;
+    U8 rem = 0;
 
-  buffer->size      = count;
-  buffer->string    = malloc(sizeof(uint8_t) * buffer->size);
-  if(buffer->string ==  NULL){
-    perror("maler : UtilBuffer string");
-  }
+    do {
+        rem = (U8)(_int % 10);
+        string[count] = rem + '0';
+        _int /= 10;
+        ++count;
+    } while (_int != 0);
 
-  for(int i = 0 ; i < buffer->size ; ++i){
-    buffer->string[i] = string[buffer->size - i - 1];
-  }
-  
-  write(STDOUT_FILENO, buffer->string, buffer->size);
-  write(STDOUT_FILENO, "\n", 1);
+    for (size_t i = count - 1; i >= 0; --i) {
+      putchar(string[i]);
+    }
+    putchar('\n');
+}
 
-  free(string);
-  return buffer;
+bool findstr(const char* str, const char* check) {
+    if (str == NULL || check == NULL) {
+        LOG_WARNING("NULL pointer passed");
+        return false;
+    }
+
+    if (*str == '\0' || *check == '\0') {
+        LOG_WARNING("EMPTY string passed");
+        return false;
+    }
+
+    return contains(str, check);
+}
+
+bool contains(const char* str, const char* check) {
+    if (str == NULL || check == NULL) {
+        LOG_WARNING("NULL pointer passed");
+        return false;
+    }
+
+    if (*str == '\0' && *check != '\0') {
+        LOG_WARNING("End of string reached prematurely");
+        return false;
+    }
+
+    if (*check == '\0') {
+        return true;
+    }
+
+    if (*str == *check) {
+        return contains(str + 1, check + 1);
+    }
+
+    return contains(str + 1, check);
 }
