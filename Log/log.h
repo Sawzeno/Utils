@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include  <stdint.h>
+#include  <stdbool.h>
 
 #define LOG_ERROR(fmt, ...) \
     fprintf(stderr, "[ERROR] %s: " fmt " [%s:%d]\n", __FUNCTION__, ##__VA_ARGS__, __FILE__, __LINE__);\
@@ -27,11 +28,6 @@
 
 #define I64 int64_t
 #define I8	int8_t
-
-typedef struct{
-  U8* string;
-  U8  size;
-}UtilBuff;
 
 void writeint (U64 integer);
 void sp       (const char *format , ...); 
