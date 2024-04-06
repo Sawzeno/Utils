@@ -1,3 +1,5 @@
+//this contains an implimentation of a readonly list data strucuture that shall be used to only point and get info of strings
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <stdarg.h>
