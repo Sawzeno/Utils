@@ -1,5 +1,6 @@
 #pragma once
 
+#include  <stdio.h>
 #include  <stdint.h>
 #include  <stdbool.h>
 
@@ -24,12 +25,44 @@
 #define REACH fprintf(stderr, "\x1b[2;93mFILE:  %s  LINE: %d  FUNC: %s\x1b[0m\n",__FILE__,__LINE__,__func__);
 
 #define U64 uint64_t
-#define U8	uint8_t
-
 #define I64 int64_t
+
+#define U8	uint8_t
 #define I8	int8_t
 
-void writeint (U64 integer);
-void sp       (const char *format , ...); 
-bool findstr  (const char* str    , const char* check);
-bool contains (const char* str    , const char* check);
+typedef struct Unode  Unode;
+typedef struct Ulist  Ulist;  
+typedef struct Ubuff  Ubuff;
+
+struct  Ubuff{
+  U8*     ptr;
+  U64     len;
+};
+
+struct  Unode{
+  void*   item;
+  Unode*  next;
+};
+
+struct  Ulist{
+  Unode* head;
+  Unode* tail;
+};
+
+U8*     readFile(FILE* file);
+void    writeint (I64 integer);
+void    up(const char *format , ...); 
+
+Ubuff*  createUbuff(U8* ptr , U64 len);
+void    freeUbuff(void* item);
+
+Unode*  createUnode(void* item);
+Unode*  addUnode(Ulist* ulist  , void* item);
+
+Ulist*  createUlist();
+U64     freeUlist(Ulist* ulist , void (*freeItem)(void*));
+
+Ulist*  createWordList(U8* buffer); 
+U64     printWordList(Ulist* list);
+
+bool    contains (const char* str    , const char* check);
