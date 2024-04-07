@@ -5,7 +5,7 @@ exec 2> error.txt
 source color.sh
 
 CC=gcc-13
-LIBS="../List/list.c ../Log/log.c"
+LIBS="../Utils/utils.c"
 CFLAGS="-Wall -Wextra -pedantic -std=c2x -Wshadow -Wpointer-arith -Wcast-qual"
 
 compile() {

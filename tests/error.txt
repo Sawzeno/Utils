@@ -1,0 +1,1 @@
+./r.sh: line 21: 16552 Illegal instruction: 4  ./a.out 2> error.txt
