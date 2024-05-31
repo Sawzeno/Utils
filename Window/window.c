@@ -1,9 +1,11 @@
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include  <termios.h>
+#include <stdio.h>
 
 #include "window.h"
-
 void* initBuffer(char* str, U64 size) {
   Buffer* buffer = malloc(sizeof(Buffer));
   MEMERR(buffer)
@@ -59,11 +61,11 @@ void debugRowItem(void* item) {
 //-------------------------------------------------------
 
 Screen* initScreen(U64 resx , U64 resy){
- 
+
   Screen* screen  = malloc(sizeof(Screen));
+  ISNULL(screen)
   screen->resx    = resx;
   screen->resy    = resy;
-  screen->string  = NULL; 
   screen->horz    = NULL;
   screen->vert    = NULL; 
   screen->rows    = NULL;
@@ -78,7 +80,6 @@ Screen* splitHORZ(Screen* parent, U64 percent) {
   U64 newScreenStart = parentSize - (parent->resx * disp); 
 
   Screen* newscreen  = initScreen(parent->resx, disp);
-  newscreen->string  = parent->string + newScreenStart; 
 
   if (parent->horz == NULL) {
     parent->horz = newscreen;
@@ -92,17 +93,17 @@ Screen* splitHORZ(Screen* parent, U64 percent) {
   return newscreen;
 }
 
-Screen* splitVERT(Screen* parent, U64 percent){
-  U64 parentsize  = parent->resy * parent->resx; 
+Screen* splitVERT(Window* window , Screen* parent, U64 percent){
 
   U64 disp = (parent->resx * percent) / 100;
   parent->resx  -= disp;
-
-  U64 newScreenStart  = parentsize - (parent->resy * disp);
-
   Screen* newscreen = initScreen(disp, parent->resy);
-  newscreen->string = parent->string + newScreenStart;
+  //------------------------------------------------------
 
+  int id = findScreen(parent);
+  
+
+  //------------------------------------------------------
   if (parent->vert == NULL) {
     parent->vert = newscreen;
   } else {
@@ -111,11 +112,8 @@ Screen* splitVERT(Screen* parent, U64 percent){
     parent->vert->vert  = temp; 
   }
 
-
   return newscreen;
 }
-
-
 
 Window* createWindow(U64 resx , U64 resy){
   Window* window  = malloc(sizeof(Window));
@@ -123,16 +121,34 @@ Window* createWindow(U64 resx , U64 resy){
   window->resx  = resx;
   window->resy  = resy;
 
-  window->memory  = malloc(sizeof(char) * window->resx * window->resy);
-
+  window->memory  = malloc(sizeof(char) * (window->resx + 1) * window->resy);
+  ISNULL(window->memory)
   Screen* screen  = initScreen(window->resx,  window->resy);
-  screen->string  = window->memory;
-  
+
+  ListInfo* info  = createListInfo(createRowItem , debugRowItem);
+
+  List* rowList = createList(info, window->resy, 0);
+
+  char* memptr  = window->memory;
+  for(U64 i = 0 ; i < rowList->size ; ++i){
+    List* Row = (List*)(getListNode(rowList , i)->item);
+
+    memset(memptr, '*', window->resx);
+    void* buff  = initBuffer(memptr , window->resx);
+    memptr  +=  window->resx;
+    addListNode(Row, buff,NULL);
+
+    memset(memptr, '\n', 1);
+    void* end   = initBuffer(memptr , 1);
+    strcpy(((Buffer*)end)->str, "\n");
+    addListNode(Row , end , NULL);
+    memptr += 1;
+  }
 
   window->root = screen;
-
+  // debugList(rowList);
   return window;
- }
+}
 
 // void resizeScreen(Screen* parent ,Orient child , I64 disp){
 //
@@ -153,17 +169,38 @@ Window* createWindow(U64 resx , U64 resy){
 //   fillScreen(parent, parent->type);
 //   fillScreen(child, child->type);
 // }
-
+//
+struct termios orig_termios;
+void die(const char *s) {
+  perror(s);
+  exit(1);
+}
+void disableRawMode() {
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+    die("tcsetattr");
+}
+void enableRawMode() {
+  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr");
+  atexit(disableRawMode);
+  struct termios raw = orig_termios;
+  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+  raw.c_oflag &= ~(OPOST);
+  raw.c_cflag |= (CS8);
+  raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+  raw.c_cc[VMIN] = 0;
+  raw.c_cc[VTIME] = 1;
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+}
 void render(Window* window){
-  Screen* temp = window->root;
-  while(temp != NULL){
-    U64 i = 0;
-    while(i < temp->resy){
-      write(STDOUT_FILENO, temp->string + (temp->resx * i), temp->resx);
-      write(STDOUT_FILENO, "\n" , 1);
-      ++i;
-    }
-    temp  = temp->horz;
+
+  write(STDOUT_FILENO ,window->memory , (window->resx + 1) * window->resy);
+  exit(EXIT_SUCCESS);
+  enableRawMode();
+  while (1) {
+    char c = '\0';
+    read(STDIN_FILENO, &c, 1);
+    if (c == 'q') break;
+    write(STDOUT_FILENO ,"\x1b[H" ,3);
   }
 }
 

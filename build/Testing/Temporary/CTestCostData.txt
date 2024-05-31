@@ -1,0 +1,7 @@
+t3.test 0 0
+t4.test 0 0
+t9.test 0 0
+---
+t3.test
+t4.test
+t9.test

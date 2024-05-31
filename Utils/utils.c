@@ -1,30 +1,175 @@
+#include  <signal.h>
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <stdarg.h>
 #include  <stdbool.h>
 #include  <unistd.h>
-#include  <ctype.h>
+#include  <time.h>
 
 #include  "utils.h"
 
-void  initLogging (){
-  Uwrite("TODO\n");
+static const char* logLevels[6]  = 
+  { "[FATAL]: ",
+    "[ERROR]: ",
+    "[WARN]:  ",
+    "[INFO]:  ",
+    "[DEBUG]: ",
+    "[TRACE]: "
+  };
+
+static const char* logColors[6] =
+  {
+    "\x1b[95m",
+    "\x1b[91m",
+    "\x1b[93m",
+    "\x1b[90m",
+    "\x1b[92m",
+    "\x1b[97m"
+  };
+
+Unode*  createUnode(void* item, Unode* next) {
+  Unode* unode = calloc(1 , sizeof(Unode)); 
+  MEMERR(unode);
+  unode->item = item; 
+  unode->next = next;
+  return unode;
 }
 
-void  killLogging (){
-  Uwrite("TODO\n");
+Unode*  addUnode(Unode* prev, Unode* newUnode){
+  ISNULL(prev , NULL);
+  ISNULL(newUnode, NULL);
+  prev->next  = newUnode;
+  return newUnode;
+}
+
+Ulist*  createUlist(void){
+  Ulist* ulist  = calloc(1 , sizeof(Ulist));
+  MEMERR(ulist);
+  Unode* dummy  = createUnode(NULL, NULL);
+  ulist->head = ulist->tail = dummy;
+  return ulist;
+}
+
+u64 freeUlist(Ulist* ulist , void (*freeItem)(void*)) {
+  u64 items = 0;
+  ISNULL(ulist , 0);
+
+  Unode* curr = ulist->head;
+  Unode* next = NULL;
+
+  while (curr != NULL) {
+    next = curr->next;
+    if(freeItem != NULL){
+      freeItem(curr->item); 
+    }
+    free(curr);
+    curr = next;
+    ++items;
+  }
+
+  free(ulist);
+  return items;
+}
+
+void sendSignal( int sig, const char* str, bool e){
+  union sigval sv;
+
+  Uinfo* info = calloc(1, sizeof(Uinfo));
+  MEMERR(info);
+  info->str  = str;
+  info->e    = e;
+  sv.sival_ptr  = (void*)info;
+
+  if (sigqueue(getpid(), sig, sv) == -1) {
+    UFATAL("SIGQUEUE");
+  }
+}
+
+void handle_sigill(int sig, siginfo_t* info, void* context){
+  (void)context;
+  if(sig  ==  SIGILL){
+    if(info == NULL){
+      UFATAL("SIGILL raised");
+      exit(SIGILL);
+    }else{
+      Uinfo* uinfo  = (Uinfo*)(info->si_value.sival_ptr);
+    
+      UFATAL("SIGILL raised : %s", uinfo->str);
+      if(uinfo->e){
+        UFATAL("EXITING!");
+        exit(SIGILL);
+      }
+    }
+  }
+}
+
+void handle_sigint(int sig){
+  if(sig == SIGINT){
+    UFATAL("SIGINT, TERMINATING");
+    exit(SIGINT);
+  }
+}
+void handle_sigsegv(int sig){
+  if(sig == SIGSEGV){
+    void* buffer[100];
+    u64 size  = backtrace(buffer,100);
+    char** symbols  = backtrace_symbols(buffer, size);
+    if(symbols != NULL){
+        UERROR("func name : %s",symbols[4]);
+    }else{
+      UERROR("COULD NOT BACKTRACE SYMBOLS");
+    }
+    UFATAL("SIGSEGV: TERMINATING...");
+    exit(SIGSEGV);
+  }
+}
+
+void  initLogging (void){
+  stack_t signalStack;
+  signalStack.ss_sp = calloc(1,SIGSTKSZ);
+  MEMERR(signalStack.ss_sp);
+  signalStack.ss_size = SIGSTKSZ;
+  signalStack.ss_flags= SS_ONSTACK;
+
+  if(sigaltstack(&signalStack, NULL) == -1){
+    UERROR("COULD NOT INITIALIZE SIGNALSTACK !");
+    exit(EXIT_FAILURE);
+  }
+
+  struct sigaction sigactINT;
+  sigemptyset(&sigactINT.sa_mask);
+  sigactINT.sa_handler= handle_sigint;
+  sigactINT.sa_flags = SA_ONSTACK;
+
+  struct sigaction sigactSEGV;
+  sigemptyset(&sigactSEGV.sa_mask);
+  sigactSEGV.sa_handler= handle_sigsegv;
+  sigactSEGV.sa_flags = SA_ONSTACK;
+
+  struct sigaction sigactILL;
+  sigemptyset(&sigactILL.sa_mask);
+  sigactILL.sa_sigaction = handle_sigill;
+  sigactILL.sa_flags  = SA_SIGINFO ;
+
+  if( 
+    sigaction(SIGINT, &sigactINT, NULL) == -1 ||
+    sigaction(SIGSEGV,&sigactSEGV,NULL) == -1 ||
+    sigaction(SIGILL, &sigactILL, NULL) == -1
+  ){
+    UERROR("COULD NOT SET UP SIGNAL HANDLERS");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void  Ulog(log_level level , const char* message , ...){
-  const char* levels[6]  = {"[FATAL]: ","[ERROR]: ","[WARN]:  ","[INFO]:  ","[DEBUG]: ","[TRACE]: "};
   char out_message[1024];
-  int  prefix_len = sprintf(out_message, "%s", levels[level]);
+  int  prefix_len = sprintf(out_message, "%s", logLevels[level]);
   va_list args;
   va_start(args , message);
   vsnprintf(out_message + prefix_len, 1024 - prefix_len, message , args);
   va_end(args);
 
-  printf("%s\n",out_message);
+  Uwrite("%s%s%s\n",logColors[level],out_message,"\x1b[0m");
 }
 
 void  Uwrite(const char *message, ...) {
@@ -37,117 +182,14 @@ void  Uwrite(const char *message, ...) {
   write(STDOUT_FILENO, buffer, size); 
 }
 
-Ubuff* createUbuff(u8* ptr , u64 len){
-  Ubuff*  ubuff = calloc(1 , sizeof(Ubuff));
-  ISNULL(ubuff)
-  ubuff->ptr  = ptr;
-  ubuff->len  = len;
-  return ubuff;
-}
-
-void freeUbuff(void* item){
-  Ubuff* ubuff  = (Ubuff*)(item);
-  free(ubuff);
-}
-
-Unode*  createUnode(void* item) {
-  Unode* unode = calloc(1 , sizeof(Unode)); 
-  ISNULL(unode) 
-  unode->item = item; 
-  return unode;
-}
-
-Ulist*  createUlist(){
-  Ulist* ulist  = calloc(1 , sizeof(Ulist));
-  ISNULL(ulist);
-  return ulist;
-}
-
-Unode*  addUnode(Ulist* ulist  , void* item){
-  ISNULL(ulist)
-  if(ulist->head  == NULL){
-    ulist->head = createUnode(item);
-    ulist->tail = ulist->head;
-  }else{
-    ulist->tail->next = createUnode(item);
-    ulist->tail = ulist->tail->next;
-  }
-  return ulist->tail;
-}
-
-u64 freeUlist(Ulist* ulist , void (*freeItem)(void*)) {
-  u64 items = 0;
-  ISNULL(ulist)
-
-  Unode* curr = ulist->head;
-  Unode* next = NULL;
-
-  while (curr != NULL) {
-    next = curr->next;
-    freeItem(curr->item); 
-    free(curr);
-    curr = next;
-    ++items;
-  }
-
-  free(ulist);
-  return items;
-}
-
-
-Ulist* createWordList(u8* buffer) {
-  Ulist* list = createUlist();
-
-  u8* wordStart = NULL;
-  u64 wordSize = 0;
-
-  u64 i = 0;
-  while (buffer[i] != '\0') {
-    // Skip leading whitespace and newline characters
-    while (isspace(buffer[i]) || buffer[i] == '\n') {
-      ++i;
-    }
-
-    if (buffer[i] != '\0') {
-      // Definitely at the start of a word
-      wordStart = &buffer[i];
-      wordSize = 0;
-
-      while (buffer[i] != '\0' && !isspace(buffer[i]) && buffer[i] != '\n') {
-        ++wordSize;
-        ++i;
-      }
-
-      Ubuff*  word  = createUbuff(wordStart , wordSize); 
-      addUnode(list, (void*)word);
-    }
-  }
-
-  return list;
-}
-
-u64 printWordList(Ulist* list) {
-  u64 num = 0;
-  ISNULL(list)
-
-  Unode* current = list->head;
-  while (current != NULL) {
-    Ubuff* word = (Ubuff*)current->item;
-    Uwrite("%.*s\n", (int)word->len, word->ptr);
-    ++num;
-    current = current->next;
-  }
-  return num;
-}
-
 u8* readFile(FILE* file) {
-  ISNULL(file)
+  ISNULL(file , NULL);
   fseek(file, 0, SEEK_END);
   u64 fileSize = ftell(file);
   fseek(file, 0, SEEK_SET);
 
   u8* fileBuffer = calloc(fileSize + 1, sizeof(u8)); 
-  ISNULL(fileBuffer);
+  MEMERR(fileBuffer);
 
   u64 bytesRead = fread(fileBuffer, sizeof(u8), fileSize, file);
   if (bytesRead != fileSize) {
@@ -191,21 +233,4 @@ void writeint(i64 integer) {
   putchar('\n');
 }
 
-bool contains(const char* str, const char* check) {
-  ISNULL(str)
-  ISNULL(check)
-  if (*str == '\0' && *check != '\0') {
-    UWARN("End of string reached prematurely");
-    return false;
-  }
 
-  if (*check == '\0') {
-    return true;
-  }
-
-  if (*str == *check) {
-    return contains(str + 1, check + 1);
-  }
-
-  return contains(str + 1, check);
-}

@@ -1,0 +1,38 @@
+[
+{
+  "directory": "/home/gon/Developer/Utils/build",
+  "command": "/usr/bin/cc  -I/home/gon/Developer/Utils/Utils  -o CMakeFiles/t3.test.dir/tests/t3.c.o -c /home/gon/Developer/Utils/tests/t3.c",
+  "file": "/home/gon/Developer/Utils/tests/t3.c",
+  "output": "CMakeFiles/t3.test.dir/tests/t3.c.o"
+},
+{
+  "directory": "/home/gon/Developer/Utils/build",
+  "command": "/usr/bin/cc  -I/home/gon/Developer/Utils/Utils  -o CMakeFiles/t3.test.dir/Utils/utils.c.o -c /home/gon/Developer/Utils/Utils/utils.c",
+  "file": "/home/gon/Developer/Utils/Utils/utils.c",
+  "output": "CMakeFiles/t3.test.dir/Utils/utils.c.o"
+},
+{
+  "directory": "/home/gon/Developer/Utils/build",
+  "command": "/usr/bin/cc  -I/home/gon/Developer/Utils/Utils  -o CMakeFiles/t4.test.dir/tests/t4.c.o -c /home/gon/Developer/Utils/tests/t4.c",
+  "file": "/home/gon/Developer/Utils/tests/t4.c",
+  "output": "CMakeFiles/t4.test.dir/tests/t4.c.o"
+},
+{
+  "directory": "/home/gon/Developer/Utils/build",
+  "command": "/usr/bin/cc  -I/home/gon/Developer/Utils/Utils  -o CMakeFiles/t4.test.dir/Utils/utils.c.o -c /home/gon/Developer/Utils/Utils/utils.c",
+  "file": "/home/gon/Developer/Utils/Utils/utils.c",
+  "output": "CMakeFiles/t4.test.dir/Utils/utils.c.o"
+},
+{
+  "directory": "/home/gon/Developer/Utils/build",
+  "command": "/usr/bin/cc  -I/home/gon/Developer/Utils/Utils  -o CMakeFiles/t9.test.dir/tests/t9.c.o -c /home/gon/Developer/Utils/tests/t9.c",
+  "file": "/home/gon/Developer/Utils/tests/t9.c",
+  "output": "CMakeFiles/t9.test.dir/tests/t9.c.o"
+},
+{
+  "directory": "/home/gon/Developer/Utils/build",
+  "command": "/usr/bin/cc  -I/home/gon/Developer/Utils/Utils  -o CMakeFiles/t9.test.dir/Utils/utils.c.o -c /home/gon/Developer/Utils/Utils/utils.c",
+  "file": "/home/gon/Developer/Utils/Utils/utils.c",
+  "output": "CMakeFiles/t9.test.dir/Utils/utils.c.o"
+}
+]

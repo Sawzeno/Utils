@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/t3.test.dir/tests/t3.c.o CMakeFiles/t3.test.dir/Utils/utils.c.o -o t3.test

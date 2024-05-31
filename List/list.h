@@ -4,7 +4,7 @@
 #include  <stdint.h>
 #include  <stdbool.h>
 
-#include"../Log/log.h"
+#include "utils.h"
 
 
 typedef struct ListNode ListNode;
@@ -33,6 +33,7 @@ List*     createList      (ListInfo* info , U64 size    , ... );
 ListNode* createListNode  (ListInfo* info , void* item  , va_list args  );
 ListNode* addListNode     (List*    list  , void* item  , va_list args  );
 ListNode* getListNode     (List*    list  , U64 index );
+ListInfo* createListInfo(void* (*createItemInfo)(void*, va_list), void (*debugItemInfo)(void*)); 
 
 List*     splitList       (List*  list , U64 index);
 U64       shrinkList      (List*  list , U64 index);

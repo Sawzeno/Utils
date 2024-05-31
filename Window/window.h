@@ -26,8 +26,8 @@ struct Buffer {
 struct Screen {
   Screen* vert;
   Screen* horz;  
-  char*   string;
   List*   rows;
+  uint8_t id;
   U64     resx;
   U64     resy;
 };
@@ -42,7 +42,7 @@ struct Window {
 void*   initBuffer( char* str , U64 size);
 void*   createBuffer(void* item);
 void    debugBuffer(void* item);
-Screen* splitHORZ   (Screen* parent, U64 percent);
+Screen* splitHORZ   (Window* window , Screen* parent, U64 percent);
 Screen* splitVERT   (Screen* parent, U64 percent);
 Window* createWindow(U64 resx, U64 resy);
 //void    resizeScreen(Screen* parent, Orient child ,I64 disp );
